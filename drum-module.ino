@@ -1,8 +1,9 @@
 const int sensorPin = A0;
 
-const int threshold = 25;
-const long sampleDuration = 20000; // microseconds
+const int threshold = 20;
+const long sampleDuration = 10000; // microseconds
 const long cutoffDuration = 100000; // microseconds
+float cutoffOverrideFactor = 1.2; // ie: 1.2 = must be 20% higher than peak to override cutoff period
 
 /**
  * The cutoff period is used to filter out reflections of the drum head.
@@ -12,7 +13,7 @@ const long cutoffDuration = 100000; // microseconds
  */
 bool inCutoffPeriod = false;
 int cutoffPeak = 0; // Value of the trigger when cutoff period started
-long cutoffStart = 0;  // micros() when the cutoff period started
+long cutoffStart = 0; // micros() when the cutoff period started
 
 void setup() {
   Serial.begin(115200);
@@ -41,9 +42,7 @@ int getSample(int inputPin, long durationMicros) {
 }
 
 
-
 void loop() {
-
   int sensorReading = getSample(sensorPin, sampleDuration);
 
   /**
@@ -62,21 +61,25 @@ void loop() {
     inCutoffPeriod = false;
   }
 
+
+  /**
+   * If the sensor reading is higher than the value at which the cutoff period was started,
+   * this probably isn't a reflection, and might be something like a flam, so override the cutoff
+   */
+  bool overrideCutoff = false;
+  if (inCutoffPeriod) {
+    if (sensorReading > cutoffPeak * cutoffOverrideFactor) {
+      overrideCutoff = true;
+    }
+  }
+
+
   /**
    * We want to trigger if the sensor reading is over the threshold (obviously) AND we're either not in a cutoff
    * period, or the sensor reading is higher than the value that trigger the cutoff (probably not a reflection)
    */
-  if (sensorReading > threshold && (!inCutoffPeriod || sensorReading > cutoffPeak)) {
-    Serial.println(0);
-    Serial.println(0);
-    Serial.println(0);
-    Serial.println(0);
-
+  if (sensorReading > threshold && (!inCutoffPeriod || overrideCutoff)) {
     Serial.println(sensorReading);
-    Serial.println(0);
-    Serial.println(0);
-    Serial.println(0);
-    Serial.println(0);
 
     cutoffPeak = sensorReading;
     cutoffStart = micros();
