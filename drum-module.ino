@@ -16,7 +16,7 @@ int cutoffPeak = 0; // Value of the trigger when cutoff period started
 long cutoffStart = 0; // micros() when the cutoff period started
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(31250);
 }
 
 
@@ -39,6 +39,19 @@ int getSample(int inputPin, long durationMicros) {
     }
   }
   return peak;
+}
+
+
+/**
+ * Send a midi note over serial
+ * FIXME:
+ *    Add checks to make sure command is >= 128
+ *    and data values are less <= 127
+ */
+void sendMidi(int command, int pitch, int velocity) {
+  Serial.write(command);
+  Serial.write(pitch);
+  Serial.write(velocity);
 }
 
 
@@ -79,7 +92,10 @@ void loop() {
    * period, or the sensor reading is higher than the value that trigger the cutoff (probably not a reflection)
    */
   if (sensorReading > threshold && (!inCutoffPeriod || overrideCutoff)) {
-    Serial.println(sensorReading);
+    int velocity = ((float)sensorReading / 1024.0) * 127.0;
+    
+    sendMidi(0x90, 43, velocity);  // Note on, 43=G2=Tom1, 64=Velocity(0-127)
+    sendMidi(0x80, 43, velocity);  // Note off, 43=G2=Tom1, 64=Velocity(0-127)
 
     cutoffPeak = sensorReading;
     cutoffStart = micros();
