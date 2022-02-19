@@ -14,9 +14,9 @@ class Drum {
     int valueWhenTriggered;
     unsigned long cutoffStartMicros;
     unsigned long decayStartMicros;
-    unsigned long TEMP_TIMESTAMP;
     bool isNoteOn;
     unsigned long noteOnTime;
+    int velocityCeiling;
     int getSample();
     void setMidiNoteOn(int velocity);
     void setMidiNoteOff();

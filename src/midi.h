@@ -4,17 +4,10 @@
 #include <Arduino.h>
 
 namespace MIDI {
-    void sendNoteOn(int pitch, int velocity) {
-        Serial.write(0x90);
-        Serial.write(pitch);
-        Serial.write(velocity);
-    }
-
-    void sendNoteOff(int pitch) {
-        Serial.write(0x80);
-        Serial.write(pitch);
-        Serial.write(0);
-    }
+    const char commandNoteOn = 0x90;
+    const char commandNoteOff = 0x80;
+    void sendNoteOn(int pitch, int velocity);
+    void sendNoteOff(int pitch);
 }
 
 #endif

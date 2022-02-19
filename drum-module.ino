@@ -1,6 +1,6 @@
 #include "src/drum.h";
 
-int DRUM_COUNT = 1;
+const int drumCount = 1;
 
 Drum drums[] = {
     Drum(A0),
@@ -11,7 +11,7 @@ void setup() {
 }
 
 void loop() {
-    for (int i = 0; i < DRUM_COUNT; i++) {
+    for (int i = 0; i < drumCount; i++) {
         drums[i].update();
     }
 }

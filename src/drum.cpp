@@ -5,10 +5,10 @@
 Drum::Drum(int inputPin) {
   pin = inputPin;
   midiNote = 38;
-  threshold = 20;
-  sampleDuration = 8000;
-  cutoffDuration = 15000;
-  decayDuration = 80000;
+  threshold = 10;
+  sampleDuration = 15000;
+  cutoffDuration = 5000;
+  decayDuration = 50000;
   cutoffStartMicros = 0;
   decayStartMicros = 0;
   valueWhenTriggered = 0;  // What was the value last time the pad was triggered
@@ -16,12 +16,12 @@ Drum::Drum(int inputPin) {
   isInDecay = false;
   isNoteOn = false;
   noteOnTime = 0;
+  velocityCeiling = 512;
 }
 
 int Drum::getSample() {
   unsigned long start = micros();
   int rawValue = analogRead(pin);
-  int maxValue = rawValue;
   unsigned long sampleCount = 1;
   double totalValue = rawValue;
   if (rawValue >= threshold) {
@@ -29,9 +29,6 @@ int Drum::getSample() {
       rawValue = analogRead(pin);
       totalValue += rawValue;
       sampleCount++;
-      if (rawValue > maxValue) {
-        maxValue = rawValue;
-      }
     }
   }
   return (int)(totalValue / sampleCount);
@@ -54,7 +51,6 @@ void Drum::update() {
       isInCutoff = false;
       isInDecay = true;
       decayStartMicros = micros();
-      TEMP_TIMESTAMP = micros();
     }
 
     // Don't update when in the cutoff period
@@ -96,7 +92,11 @@ void Drum::update() {
         setMidiNoteOff();
       }
 
-      int velocity = ((float)sensorValue / 1024.0) * 127.0;
+      float velocityPercent = (float)sensorValue / (float)velocityCeiling;
+      if (velocityPercent > 1.0) {
+        velocityPercent = 1.0;
+      }
+      int velocity = velocityPercent * 127.0;
       setMidiNoteOn(velocity);
     }
 }
