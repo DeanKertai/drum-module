@@ -1,8 +1,6 @@
 #ifndef DRUM_H
 #define DRUM_H
 
-#include <Arduino.h>
-
 class Drum {
   private:
     int pin;
@@ -17,7 +15,11 @@ class Drum {
     unsigned long cutoffStartMicros;
     unsigned long decayStartMicros;
     unsigned long TEMP_TIMESTAMP;
+    bool isNoteOn;
+    unsigned long noteOnTime;
     int getSample();
+    void setMidiNoteOn(int velocity);
+    void setMidiNoteOff();
     
   public:
     Drum(int pin);

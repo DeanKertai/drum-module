@@ -1,33 +1,51 @@
 #include "drum.h"
 #include "utils.h"
+#include "midi.h"
 
 Drum::Drum(int inputPin) {
   pin = inputPin;
   midiNote = 38;
-  threshold = 5;
-  sampleDuration = 5000;
-  cutoffDuration = 30000;
+  threshold = 20;
+  sampleDuration = 8000;
+  cutoffDuration = 15000;
   decayDuration = 80000;
   cutoffStartMicros = 0;
   decayStartMicros = 0;
+  valueWhenTriggered = 0;  // What was the value last time the pad was triggered
   isInCutoff = false;
   isInDecay = false;
-  valueWhenTriggered = 0;  // What was the value last time the pad was triggered
+  isNoteOn = false;
+  noteOnTime = 0;
 }
 
 int Drum::getSample() {
   unsigned long start = micros();
   int rawValue = analogRead(pin);
   int maxValue = rawValue;
+  unsigned long sampleCount = 1;
+  double totalValue = rawValue;
   if (rawValue >= threshold) {
     while (Utils::isInPeriod(start, sampleDuration)) {
       rawValue = analogRead(pin);
+      totalValue += rawValue;
+      sampleCount++;
       if (rawValue > maxValue) {
         maxValue = rawValue;
       }
     }
   }
-  return maxValue;
+  return (int)(totalValue / sampleCount);
+}
+
+void Drum::setMidiNoteOn(int velocity) {
+  isNoteOn = true;
+  noteOnTime = micros();
+  MIDI::sendNoteOn(midiNote, velocity);
+}
+
+void Drum::setMidiNoteOff() {
+  isNoteOn = false;
+  MIDI::sendNoteOff(midiNote);
 }
 
 void Drum::update() {
@@ -62,6 +80,11 @@ void Drum::update() {
         return;
       }
     }
+
+    // Turn midi note off after 100ms
+    if (isNoteOn && !Utils::isInPeriod(noteOnTime, 100000)) {
+      setMidiNoteOff();
+    }
     
     if (sensorValue > threshold) {
       isInCutoff = true;
@@ -69,6 +92,11 @@ void Drum::update() {
       cutoffStartMicros = micros();
       valueWhenTriggered = sensorValue;
 
-      Serial.println(valueWhenTriggered);
+      if (isNoteOn) {
+        setMidiNoteOff();
+      }
+
+      int velocity = ((float)sensorValue / 1024.0) * 127.0;
+      setMidiNoteOn(velocity);
     }
 }
